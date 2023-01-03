@@ -179,6 +179,17 @@ module.exports = (db) => {
  * /rides:
  *   get:
  *     summary: Returns the list of all the rides
+ *     parameters:
+ *       - in: query
+ *         name: skip
+ *         schema:
+ *              type: integer
+ *         description: The number of items to skip before starting to collect the result set
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *              type: integer
+ *         description: The numbers of items to return
  *     tags: [Rides]
  *     responses:
  *       200:
@@ -191,10 +202,24 @@ module.exports = (db) => {
  *                 $ref: '#/components/schemas/Ride'
  */
     app.get('/rides', (req, res) => {
-        db.all('SELECT * FROM Rides', function (err, rows) {
+        // this will take page value i.e from we have to fetch 20 records onward
+        const skip = req.query.skip;
+
+        //How many data we want
+        const limit = req.query.limit;
+
+        //Adding Validation 
+        if ( isNaN(limit) || isNaN(skip) || skip < 0 || limit < 1) {
+            return res.send({
+              error_code: 'INVALID_PAGINATION_VALUES',
+              message: 'Pagination Value Should Be Number And Greater Than Or Equal to 1',
+            });
+          }
+
+        db.all('SELECT * FROM Rides LIMIT ? OFFSET ?',[limit,skip], function (err, rows) {
             if (err) {
                 logger.error(`Error :: ${err}`);
-                return res.send({
+                return res.send({ 
                     error_code: 'SERVER_ERROR',
                     message: 'Unknown error'
                 });
@@ -207,8 +232,28 @@ module.exports = (db) => {
                 });
             }
 
-            res.send(rows);
+            db.all('SELECT count(*) as count FROM Rides', function (err, countOfRide) {
+                if (err) {
+                    logger.error(`Error :: ${err}`);
+                    return res.send({ 
+                        error_code: 'SERVER_ERROR',
+                        message: 'Unknown error'
+                    });
+                }
+    
+                if (rows.length === 0) {
+                    return res.send({
+                        error_code: 'RIDES_NOT_FOUND_ERROR',
+                        message: 'Could not find any rides'
+                    });
+                }
+    
+                res.send({rides:rows,TotalRides:countOfRide[0].count});
+            });
+
         });
+
+
     });
 
 
