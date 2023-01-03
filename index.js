@@ -10,6 +10,7 @@ const swaggerJSDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
 const logger  = require('./utils/logger');
+const helmet = require('helmet');
 
 const options = {
     definition: {
@@ -32,6 +33,9 @@ const swaggerSpec = swaggerJSDoc(options);
 
 const app = require('./src/app')(db);
 
+app.use(helmet());
+
 app.use('/api-docs',swaggerUi.serve,swaggerUi.setup(swaggerSpec));
+
 
 app.listen(port, () => logger.info(`App started and listening on port ${port}`));

@@ -51,7 +51,7 @@ const getRide = (skip,limit) => {
 
 const getRideById = (id) => {
     return new Promise((resolve,reject) => {
-        db.all(`SELECT * FROM Rides WHERE rideID='${id}'`, function (err, rows) {
+        db.all('SELECT * FROM Rides WHERE rideID=?', [id],function (err, rows) {
             if (err) {
                 logger.error(`Error :: ${err}`);
                 resolve({
